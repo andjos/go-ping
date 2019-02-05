@@ -44,7 +44,7 @@
             },
             "spec": {
                 "host": "${APPLICATION_DOMAIN}",
-                "path": "/go-ping",
+                "path": "/ping",
                 "to": {
                     "kind": "Service",
                     "name": "go-ping"
@@ -98,10 +98,7 @@
                             "secret": "${GITHUB_WEBHOOK_SECRET}"
                         }
                     }
-                ],
-                "postCommit": {
-                    "script": "go test -v ./..."
-                }
+                ]
             }
         },
         {

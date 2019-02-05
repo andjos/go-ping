@@ -10,7 +10,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode) //Set releasemode
 	router := gin.Default()
 
-	router.GET("/", status)
+	router.GET("/ping", status)
 	router.Run()
 
 }
