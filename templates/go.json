@@ -1,0 +1,192 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "go-ping",
+        "annotations": {
+            "description": "Simple go-ping app",
+            "tags": "golang",
+            "iconClass": "icon-go-gopher"
+        }
+    },
+    "labels": {
+        "template": "go-ping",
+        "app": "go-ping"
+    },
+    "objects": [
+        {
+            "kind": "Service",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "go-ping",
+                "annotations": {
+                    "description": "Exposes and load balances the application pods"
+                }
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "web",
+                        "port": 8080,
+                        "targetPort": 8080
+                    }
+                ],
+                "selector": {
+                    "name": "go-ping"
+                }
+            }
+        },
+        {
+            "kind": "Route",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "go-ping"
+            },
+            "spec": {
+                "host": "${APPLICATION_DOMAIN}",
+                "path": "/go-ping",
+                "to": {
+                    "kind": "Service",
+                    "name": "go-ping"
+                }
+            }
+        },
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "go-ping",
+                "annotations": {
+                    "description": "Keeps track of changes in the application image"
+                }
+            }
+        },
+        {
+            "kind": "BuildConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "go-ping",
+                "annotations": {
+                    "description": "Defines how to build the application"
+                }
+            },
+            "spec": {
+                "source": {
+                    "type": "Git",
+                    "git": {
+                        "uri": "${SOURCE_REPOSITORY_URL}",
+                        "ref": "${SOURCE_REPOSITORY_REF}"
+                    },
+                    "contextDir": "${CONTEXT_DIR}"
+                },
+                "strategy": {
+                    "type": "Docker"
+                },
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "go-ping:latest"
+                    }
+                },
+                "triggers": [
+                    {
+                        "type": "ConfigChange"
+                    },
+                    {
+                        "type": "GitHub",
+                        "github": {
+                            "secret": "${GITHUB_WEBHOOK_SECRET}"
+                        }
+                    }
+                ],
+                "postCommit": {
+                    "script": "go test -v ./..."
+                }
+            }
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "go-ping",
+                "annotations": {
+                    "description": "Defines how to deploy the application server"
+                }
+            },
+            "spec": {
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "triggers": [
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "go-ping"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "go-ping:latest"
+                            }
+                        }
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ],
+                "replicas": 1,
+                "selector": {
+                    "name": "go-ping"
+                },
+                "template": {
+                    "metadata": {
+                        "name": "go-ping",
+                        "labels": {
+                            "name": "go-ping"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "go-ping",
+                                "image": "go-ping",
+                                "ports": [
+                                    {
+                                        "containerPort": 8080
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "name": "SOURCE_REPOSITORY_URL",
+            "description": "The URL of the repository with your application source code",
+            "value": "https://github.com/andjos/go-ping"
+        },
+        {
+            "name": "SOURCE_REPOSITORY_REF",
+            "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch"
+        },
+        {
+            "name": "CONTEXT_DIR",
+            "description": "Set this to the relative path to your project if it is not in the root of your repository"
+        },
+        {
+            "name": "APPLICATION_DOMAIN",
+            "description": "The exposed hostname for the route",
+            "value": "osa2c46ac65b23e4914baa7.westeurope.cloudapp.azure.com"
+        },
+        {
+            "name": "GITHUB_WEBHOOK_SECRET",
+            "description": "Github trigger secret.  A difficult to guess string encoded as part of the webhook URL.  Not encrypted.",
+            "generate": "expression",
+            "from": "[a-zA-Z0-9]{40}"
+        }
+    ]
+}
