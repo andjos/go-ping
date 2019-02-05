@@ -7,6 +7,7 @@ RUN useradd -M -U gouser
 
 #Copy source
 WORKDIR /go/src/go-ping
+
 COPY go-ping.go  .
 
 #Get Deps
