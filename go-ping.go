@@ -20,7 +20,7 @@ func status(c *gin.Context) {
 	t := (time.Now().Format(time.RFC3339))
 
 	c.JSON(200, gin.H{
-		"status": "ok_hej",
+		"status": "ok",
 		"time":   t,
 	})
 }
